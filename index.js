@@ -9,6 +9,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+const allowedOrigins = ["http://localhost:3000", "https://userepeatos.com"];
+
 // Request logging
 app.use((req, _res, next) => {
   const ts = new Date().toISOString();
@@ -16,9 +18,18 @@ app.use((req, _res, next) => {
   next();
 });
 
-// JSON parsing for normal routes
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 
 // Health check
 app.get("/health", (_req, res) => {

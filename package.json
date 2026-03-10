@@ -1,0 +1,29 @@
+{
+  "name": "repeatos-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "migrate": "node db/migrate.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "nodemonConfig": {
+    "watch": ["*.js", "routes", "services", "db"],
+    "ext": "js,json",
+    "ignore": ["node_modules"]
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.20.0",
+    "resend": "^6.9.3"
+  }
+}

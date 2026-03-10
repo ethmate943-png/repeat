@@ -16,6 +16,16 @@ function formatAmountNg(n) {
   }).format(ngn);
 }
 
+function getMonthlyLabel(planName) {
+  const map = {
+    "Starter": "₦35,000/mo",
+    "Growth": "₦50,000/mo",
+    "Authority": "₦75,000/mo",
+    "Loyalty Add-On": "₦40,000/mo",
+  };
+  return map[planName] || null;
+}
+
 function formatDateForEmail(dateStr) {
   if (!dateStr) return "—";
   try {
@@ -66,6 +76,7 @@ export async function sendBookingConfirmationEmail(booking, payment) {
   const date = formatDateForEmail(booking.reservation_date);
   const time = formatTimeForEmail(booking.reservation_time);
   const reference = booking.paystack_reference || payment.paystack_reference || "";
+  const monthlyLabel = getMonthlyLabel(planName);
 
   const subject = `You're in — your ${planName} receipt & what's next`;
   console.log("[email]   subject:", subject);
@@ -96,7 +107,8 @@ export async function sendBookingConfirmationEmail(booking, payment) {
         <tr><td style="padding:18px 20px; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(246,245,241,.5);" colspan="2">Payment summary</td></tr>
         <tr><td style="padding:8px 20px; font-size:13px; color:rgba(246,245,241,.6);">Business</td><td style="padding:8px 20px; font-size:14px; font-weight:500; color:rgba(246,245,241,.95);">${escapeHtml(businessName)}</td></tr>
         <tr><td style="padding:8px 20px; font-size:13px; color:rgba(246,245,241,.6);">Plan</td><td style="padding:8px 20px; font-size:14px; font-weight:500; color:rgba(246,245,241,.95);">${escapeHtml(planName)}</td></tr>
-        <tr><td style="padding:8px 20px; font-size:13px; color:rgba(246,245,241,.6);">Amount paid</td><td style="padding:8px 20px; font-size:14px; font-weight:500; color:rgba(246,245,241,.95);">${escapeHtml(amount)}</td></tr>
+        <tr><td style="padding:8px 20px; font-size:13px; color:rgba(246,245,241,.6);">Amount paid (setup)</td><td style="padding:8px 20px; font-size:14px; font-weight:500; color:rgba(246,245,241,.95);">${escapeHtml(amount)}</td></tr>
+        ${monthlyLabel ? `<tr><td style="padding:8px 20px; font-size:13px; color:rgba(246,245,241,.6);">Monthly infrastructure</td><td style="padding:8px 20px; font-size:13px; font-weight:500; color:rgba(246,245,241,.85);">${escapeHtml(monthlyLabel)}</td></tr>` : ""}
         <tr><td style="padding:8px 20px; font-size:13px; color:rgba(246,245,241,.6);">Reference</td><td style="padding:8px 20px; font-size:12px; font-weight:500; color:rgba(246,245,241,.8); word-break:break-all;">${escapeHtml(reference)}</td></tr>
       </table>
       <div style="border-left:3px solid rgba(246,245,241,.35); padding:16px 20px; margin-bottom:24px; background:rgba(255,255,255,.03); border-radius:0 8px 8px 0;">

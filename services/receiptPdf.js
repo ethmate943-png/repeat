@@ -55,6 +55,14 @@ export function buildReceiptPdf(booking, payment) {
   const time = formatTimeForPdf(booking.reservation_time);
   const reference = booking.paystack_reference || payment.paystack_reference || "";
 
+  const monthlyMap = {
+    "Starter": "₦35,000/mo",
+    "Growth": "₦50,000/mo",
+    "Authority": "₦75,000/mo",
+    "Loyalty Add-On": "₦40,000/mo",
+  };
+  const monthlyLabel = monthlyMap[planName] || null;
+
   return new Promise((resolve, reject) => {
     const chunks = [];
     const doc = new PDFDocument({ size: "A4", margin: 48 });
@@ -120,7 +128,10 @@ export function buildReceiptPdf(booking, payment) {
     pdfRow("Date", date);
     pdfRow("Time", time);
     pdfRow("Party size", booking.party_size || "—");
-    pdfRow("Amount paid", amount);
+    pdfRow("Amount paid (setup)", amount);
+    if (monthlyLabel) {
+      pdfRow("Monthly infrastructure", monthlyLabel);
+    }
     doc.fontSize(10).fillColor(textMuted).text("Reference", labelX, y);
     doc.fontSize(9).fillColor(textSub).text(reference, valueX, y, { width: valueWidth, align: "right" });
     y += 28;

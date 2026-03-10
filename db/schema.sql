@@ -44,3 +44,28 @@ CREATE TABLE IF NOT EXISTS booking_payments (
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Subscriptions: store monthly infrastructure agreements after initial setup payment
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id                 UUID NOT NULL REFERENCES businesses(id),
+  booking_id                  UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+
+  customer_email              TEXT NOT NULL,
+  plan_name                   TEXT NOT NULL,
+  monthly_amount_kobo         INT  NOT NULL,
+
+  paystack_customer_code      TEXT,
+  paystack_authorization_code TEXT,
+
+  status                      TEXT NOT NULL DEFAULT 'active',
+  -- active | paused | canceled
+
+  last_charged_at             TIMESTAMPTZ,
+  next_charge_at              TIMESTAMPTZ,
+
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE (booking_id)
+);
+

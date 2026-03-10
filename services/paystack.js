@@ -43,3 +43,17 @@ export async function verifyTransaction(reference) {
   return data;
 }
 
+export async function chargeAuthorization({ email, authorizationCode, amountKobo, reference, metadata = {} }) {
+  console.log("[paystack] Charge authorization reference=" + reference + " amount_kobo=" + amountKobo);
+  const payload = {
+    email,
+    authorization_code: authorizationCode,
+    amount: amountKobo,
+    reference,
+    currency: "NGN",
+    metadata,
+  };
+  const { data } = await client.post("/transaction/charge_authorization", payload);
+  return data;
+}
+

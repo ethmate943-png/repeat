@@ -6,6 +6,53 @@ import { sendBookingConfirmationEmail } from "../services/email.js";
 
 const router = express.Router();
 
+const SUBSCRIPTION_MONTHLY_KOBO = {
+  Starter: 3500000,        // ₦35,000
+  Growth: 5000000,         // ₦50,000
+  Authority: 7500000,      // ₦75,000
+  "Loyalty Add-On": 4000000, // ₦40,000
+};
+
+async function ensureSubscription(booking, monthlyAmountKobo, customerCode, authorizationCode) {
+  if (!monthlyAmountKobo || !customerCode || !authorizationCode) {
+    console.log("[subscriptions] Skipping subscription create — missing data", {
+      monthlyAmountKobo,
+      hasCustomerCode: !!customerCode,
+      hasAuthorizationCode: !!authorizationCode,
+    });
+    return;
+  }
+
+  console.log("[subscriptions] Upserting subscription for booking_id=", booking.id, "plan=", booking.notes || "(none)");
+  await query(
+    `INSERT INTO subscriptions (
+       business_id,
+       booking_id,
+       customer_email,
+       plan_name,
+       monthly_amount_kobo,
+       paystack_customer_code,
+       paystack_authorization_code,
+       status
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'active')
+     ON CONFLICT (booking_id) DO UPDATE SET
+       monthly_amount_kobo = EXCLUDED.monthly_amount_kobo,
+       paystack_customer_code = EXCLUDED.paystack_customer_code,
+       paystack_authorization_code = EXCLUDED.paystack_authorization_code,
+       status = 'active',
+       updated_at = NOW()`,
+    [
+      booking.business_id,
+      booking.id,
+      booking.customer_email,
+      (booking.notes || "").replace(/^Plan:\s*/i, "").trim() || "Subscription",
+      monthlyAmountKobo,
+      customerCode,
+      authorizationCode,
+    ],
+  );
+}
+
 // POST /api/payments/verify
 // Body: { reference }
 // Verifies with Paystack; if success, marks booking paid and sends confirmation email (so it works when webhook can't reach localhost).
@@ -65,6 +112,15 @@ router.post("/verify", async (req, res) => {
           } else {
             console.warn("[payments] Verify: confirmation email was NOT sent. Reason:", emailResult.error || "unknown");
           }
+
+          // Ensure subscription record for monthly infrastructure
+          const planName = (booking.notes || "").replace(/^Plan:\s*/i, "").trim() || "Subscription";
+          const monthlyAmountKobo = SUBSCRIPTION_MONTHLY_KOBO[planName] || null;
+          const auth = result?.data?.data?.authorization;
+          const customer = result?.data?.data?.customer;
+          const authorizationCode = auth?.authorization_code || null;
+          const customerCode = customer?.customer_code || null;
+          await ensureSubscription(booking, monthlyAmountKobo, customerCode, authorizationCode);
         }
       } else {
         console.log("[payments] Verify: no booking found for reference (cannot send email).");
@@ -170,6 +226,15 @@ router.post("/webhooks/paystack", express.raw({ type: "application/json" }), asy
       } else {
         console.warn("[webhook] Confirmation email was NOT sent. Reason:", emailResult.error || "unknown");
       }
+
+      // Ensure subscription record for monthly infrastructure
+      const planName = (booking.notes || "").replace(/^Plan:\s*/i, "").trim() || "Subscription";
+      const monthlyAmountKobo = SUBSCRIPTION_MONTHLY_KOBO[planName] || null;
+      const auth = event?.data?.authorization;
+      const customer = event?.data?.customer;
+      const authorizationCode = auth?.authorization_code || null;
+      const customerCode = customer?.customer_code || null;
+      await ensureSubscription(booking, monthlyAmountKobo, customerCode, authorizationCode);
     }
 
     return res.status(200).end();

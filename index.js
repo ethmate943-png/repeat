@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import paymentsRouter from "./routes/payments.js";
 import bookingsRouter from "./routes/bookings.js";
+import subscriptionsRouter from "./routes/subscriptions.js";
 
 dotenv.config();
 
@@ -39,9 +40,10 @@ app.get("/health", (_req, res) => {
 // Bookings + Paystack routes
 app.use("/api/bookings", bookingsRouter);
 app.use("/api/payments", paymentsRouter);
+app.use("/api/subscriptions", subscriptionsRouter);
 
 app.listen(PORT, () => {
   console.log("[server] RepeatOS backend listening on http://localhost:" + PORT);
-  console.log("[server] Health: GET /health | Bookings: /api/bookings | Payments: /api/payments");
+  console.log("[server] Health: GET /health | Bookings: /api/bookings | Payments: /api/payments | Subscriptions: /api/subscriptions");
 });
 
